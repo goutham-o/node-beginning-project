@@ -5,7 +5,6 @@ exports.getAddProduct = (req, res, next) => {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
-    isAuthenticated: req.session.isLoggedIn,
   });
 };
 
@@ -19,11 +18,12 @@ exports.postAddProduct = (req, res, next) => {
     price: price,
     description: description,
     imageUrl: imageUrl,
-    userId: req.user
+    userId: req.user,
   });
   product
     .save()
     .then((result) => {
+      req.flash("success", "Created Product Successfully");
       console.log("Created Product");
       res.redirect("/admin/products");
     })
@@ -67,19 +67,23 @@ exports.postEditProduct = (req, res, next) => {
     })
     .then((result) => {
       console.log("Updated Product");
+      req.flash('success', ' Updated Product Successfully');
       res.redirect("/admin/products");
     })
     .catch((err) => console.log(err));
 };
 
 exports.getProducts = (req, res, next) => {
+  
+  let message = req.flash("success");
+  message = message.length > 0 ? message[0] : null;
   Product.find()
     .then((products) => {
       res.render("admin/products", {
         prods: products,
         pageTitle: "Admin Products",
         path: "/admin/products",
-        isAuthenticated: req.session.isLoggedIn,
+        message: message,
       });
     })
     .catch((err) => console.log(err));
@@ -87,9 +91,10 @@ exports.getProducts = (req, res, next) => {
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.findByIdAndRemove(prodId)
+  Product.findOneAndDelete(prodId)
     .then(() => {
       console.log("Destroyed Product");
+      req.flash('success', 'Product Deleted Successfully');
       res.redirect("/admin/products");
     })
     .catch((err) => console.log(err));
