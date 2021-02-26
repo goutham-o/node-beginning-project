@@ -59,25 +59,27 @@ exports.postEditProduct = (req, res, next) => {
 
   Product.findById(prodId)
     .then((product) => {
+      if (product.userId.toString() !== req.user._id.toString()) {
+        return res.redirect("/");
+      }
       product.title = updatedTitle;
       product.price = updatedPrice;
       product.description = updatedDesc;
       product.imageUrl = updatedImageUrl;
-      return product.save();
+      return product.save().then((result) => {
+        console.log("Updated Product");
+        req.flash("success", " Updated Product Successfully");
+        res.redirect("/admin/products");
+      });
     })
-    .then((result) => {
-      console.log("Updated Product");
-      req.flash('success', ' Updated Product Successfully');
-      res.redirect("/admin/products");
-    })
+
     .catch((err) => console.log(err));
 };
 
 exports.getProducts = (req, res, next) => {
-  
   let message = req.flash("success");
   message = message.length > 0 ? message[0] : null;
-  Product.find()
+  Product.find({ userId: req.user._id })
     .then((products) => {
       res.render("admin/products", {
         prods: products,
@@ -91,10 +93,10 @@ exports.getProducts = (req, res, next) => {
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.findOneAndDelete(prodId)
+  Product.deleteOne({ _id: prodId, userId: req.user._id })
     .then(() => {
       console.log("Destroyed Product");
-      req.flash('success', 'Product Deleted Successfully');
+      req.flash("success", "Product Deleted Successfully");
       res.redirect("/admin/products");
     })
     .catch((err) => console.log(err));
